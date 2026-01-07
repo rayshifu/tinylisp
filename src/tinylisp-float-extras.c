@@ -35,7 +35,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 FILE *in = NULL;
-char buf[40],see = ' ',*ptr = "",*line = NULL,ps[20];
+char buf[256],see = ' ',*ptr = "",*line = NULL,ps[20];
 
 /* forward proto declarations */
 L eval(L,L),Read(),parse(),err(I,L); void print(L);
@@ -335,6 +335,7 @@ char scan() {
  I i = 0;
  while (seeing(' ') || seeing(';')) if (get() == ';') while (!seeing('\n')) get();
  if (seeing('(') || seeing(')') || seeing('\'') || seeing('`') || seeing(',')) buf[i++] = get();
+ else if (seeing('"')) do buf[i++] = get(); while (i < sizeof(buf)-1 && (!seeing('"') || !get()));
  else do buf[i++] = get(); while (i < sizeof(buf)-1 && !seeing('(') && !seeing(')') && !seeing(' '));
  return buf[i] = 0,*buf;
 }
@@ -362,6 +363,7 @@ L parse() {
  if (*buf == '(') return list();
  if (*buf == '\'') return cons(atom("quote"),cons(Read(),nil));
  if (*buf == '`') return scan(),tick();
+ if (*buf == '"') return cons(atom("quote"),cons(atom(buf+1),nil));
  return sscanf(buf,"%g%n",&n,&i) > 0 && !buf[i] ? n : atom(buf);
 }
 

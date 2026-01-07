@@ -35,7 +35,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 FILE *in = NULL;
-char buf[40],see = ' ',*ptr = "",*line = NULL,ps[20];
+char buf[256],see = ' ',*ptr = "",*line = NULL,ps[20];
 
 /* forward proto declarations */
 L eval(L,L),Read(),parse(),err(I,L); void print(L);
@@ -47,7 +47,7 @@ L eval(L,L),Read(),parse(),err(I,L); void print(L);
    safety invariant: hp <= sp<<3 */
 I hp = 0,sp = N,tr = 0;
 /* atom, primitive, cons, closure and nil tags for NaN boxing */
-enum { ATOM = 0x7ff8,STR = 0xf779,PRIM = 0x7ffa,CONS = 0x7ffb,CLOS = 0x7ffc,MACR = 0x7ffd,NIL = 0x7ffe };
+enum { ATOM = 0x7ff8,PRIM = 0x7ff9,CONS = 0x7ffa,CLOS = 0x7ffb,MACR = 0x7ffc,NIL = 0x7ffd };
 /* cell[N] array of Lisp expressions, shared by the stack and atom heap */
 L cell[N];
 /* Lisp constant expressions () (nil), #t, and the global environment env */
@@ -62,12 +62,10 @@ I ord(L x) { return *(unsigned long long*)&x; }
 L num(L n) { return n; }
 I equ(L x,L y) { return *(unsigned long long*)&x == *(unsigned long long*)&y; }
 /* interning of atom names (Lisp symbols), returns a unique NaN-boxed ATOM */
-L atom2(I t, const char *s) {
+L atom(const char *s) {
  I i = 0; while (i < hp && strcmp(A+i,s)) i += strlen(A+i)+1;
- return i == hp && (hp += strlen(strcpy(A+i,s))+1) > sp<<3 ? err(4,nil) : box(t,i);
+ return i == hp && (hp += strlen(strcpy(A+i,s))+1) > sp<<3 ? err(4,nil) : box(ATOM,i);
 }
-L str(const char *s) { return atom2(STR, s+1); }  /* strip leading quote */
-L atom(const char *s) { return atom2(ATOM, s); }
 
 /* section 14: error handling and exceptions
    ERR 1: not a pair
@@ -271,7 +269,6 @@ L eval(L x,L e) {
   y = x;
   /* if ix is an atom, then return its value; if x is not an application list (it is constant), then return x */
   if (T(x) == ATOM) { x = assoc(x,e); break; }
-  if (T(x) == STR) { /* nothing */ break; }
   if (T(x) != CONS) break;
   /* evaluate f in the application (f . x) and get the list of arguments x */
   f = eval(car(x),e); x = cdr(x);
@@ -338,13 +335,7 @@ char scan() {
  I i = 0;
  while (seeing(' ') || seeing(';')) if (get() == ';') while (!seeing('\n')) get();
  if (seeing('(') || seeing(')') || seeing('\'') || seeing('`') || seeing(',')) buf[i++] = get();
- else if (seeing('"')) {
-  while (1) {
-    buf[i++] = get();
-    if (i >= sizeof(buf)-1) break;
-    if (seeing('"')) { /* skip trailing quote */ get(); break; }
-  }
- }
+ else if (seeing('"')) do buf[i++] = get(); while (i < sizeof(buf)-1 && (!seeing('"') || !get()));
  else do buf[i++] = get(); while (i < sizeof(buf)-1 && !seeing('(') && !seeing(')') && !seeing(' '));
  return buf[i] = 0,*buf;
 }
@@ -372,7 +363,7 @@ L parse() {
  if (*buf == '(') return list();
  if (*buf == '\'') return cons(atom("quote"),cons(Read(),nil));
  if (*buf == '`') return scan(),tick();
- if (*buf == '"') return str(buf);
+ if (*buf == '"') return cons(atom("quote"),cons(atom(buf+1),nil));
  return sscanf(buf,"%lg%n",&n,&i) > 0 && !buf[i] ? n : atom(buf);
 }
 
@@ -389,7 +380,7 @@ void printlist(L t) {
 }
 void print(L x) {
  if (T(x) == NIL) printf("()");
- else if (T(x) == ATOM || T(x) == STR) printf("%s",A+ord(x));
+ else if (T(x) == ATOM) printf("%s",A+ord(x));
  else if (T(x) == PRIM) printf("<%s>",prim[ord(x)].s);
  else if (T(x) == CONS) printlist(x);
  else if (T(x) == CLOS) printf("{%u}",ord(x));
