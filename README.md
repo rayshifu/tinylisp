@@ -186,13 +186,15 @@ Locals are declared with the following `let*` special form.  This form differs s
 
 evaluates `y` with a local scope of bindings for symbols `v` subsequently bound from the first to the last to the corresponding values of `x`.
 
-> Note that most Lisp use a syntax with binding pairs in a list and one or more body expressions:
+> Note that most Lisp use a syntax with binding pairs in a list followed by one or more body expressions:
 > 
 >     (let* ((v1 x1) (v2 x2) ... (vk xk)) y1 y2 ... yn)
 > 
 > In tinylisp we can do the same by binding all but the last body expression `y` to dummy `_` variables:
 > 
 >     (let* (v1 x1) (v2 x2) ... (vk xk) (_ y1) (_ y2) ... yn)
+>
+> or we can use `(begin y1 y2 ... yn)` in the `let*` body, where `begin` is defined in [common.lisp](src/common.lisp).
 
 ## Additional Lisp primitives introduced in the [article](tinylisp.pdf)
 
@@ -210,11 +212,11 @@ evaluates `y` with a local scope of bindings for symbols `v` bound to the values
 
     (letrec* (v1 x1) (v2 x2) ... (vk xk) y)
 
-evaluates `y` with a local scope of bindings for symbols `v` subsequently bound from the first to the last to the values of `x`, supporting self-recursive lambda closures.
+evaluates `y` with a local scope of bindings for symbols `v` subsequently bound from the first to the last to the values of `x`, supporting self-recursive locally-scoped lambda closures.
 
     (letrec (v1 x1) (v2 x2) ... (vk xk) y)
 
-evaluates `y` with a local scope of bindings for symbols `v` bound to the values of `x` evaluated in the local scope, supporting mutual-callable and mutual-recursive lambda closures.
+evaluates `y` with a local scope of bindings for symbols `v` bound to the values of `x` evaluated in the local scope, supporting mutual-callable and mutual-recursive locally-scoped lambda closures.
 
     (setq <symbol> x)
 
@@ -223,7 +225,7 @@ destructively assigns a globally or locally-bound symbol a new value.
     (set-car! <pair> x)
     (set-cdr! <pair> y)
 
-destructively assigns a pair a new car or cdr value, respectively.
+destructively assigns a cons pair a new car or cdr value, respectively.
 
     (macro <variables> <expr>)
 
@@ -256,7 +258,7 @@ throws error `n`, where `n` is a nonzero integer.
 
     (load <atom>)
 
-parses and executes Lisp from a file with the name `<atom>`, for example `(load some.lisp)` (name is not quoted).
+parses and executes Lisp from a file with the name `<atom>`, for example `(load some.lisp)` (the atom name is not quoted).
 
 ## Additional Lisp functions defined in tinylisp itself
 
