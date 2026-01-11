@@ -62,9 +62,9 @@ Mac M1 compiled with clang 14.0.0 option -O2 to solve the
 | [lisp-cheney](https://github.com/Robert-van-Engelen/lisp) | cheney     | 16384 | 1420 ms |
 
 Tinylisp is a clear winner!  It is faster and the memory size has no effect on
-the running time of tinylisp (different memory sizes are not shown in the table
-for tinylisp).  But memory size does impact mark-sweep and cheney, since more
-memory means fewer GC stages.
+the running time of tinylisp (since there is no effect, different memory sizes
+are not shown in the table for tinylisp).  But memory size does impact
+mark-sweep and cheney, since more memory means fewer GC stages.
 
 **How does it work?**
 
