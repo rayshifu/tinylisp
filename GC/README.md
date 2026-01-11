@@ -33,14 +33,15 @@ See also [#20](https://github.com/Robert-van-Engelen/tinylisp/issues/20)
 
 **Reference counting or mark-sweep, which is faster?**
 
-Reference counting continuously releases unused memory (unused cell pairs) back
-into the pool to recycle for reuse.  By contrast, mark-sweep only collects
-unused memory to recycle for reuse when the interpreter runs out of memory.
-This may seem simple and fast, however, integrating a full mark-sweep impacts
-memory management because it also requires an auxiliary stack to keep track of
-all temporary lists that are being constructed by the interpreter that cannot
-be released yet.  This adds overhead to the interpreter to push and pop Lisp
-values on this auxiliary stack.
+Reference counting continuously releases unused memory (i.e. unused cons cell
+pairs that form lists) back into the pool to recycle for reuse.  By contrast,
+mark-sweep only collects unused memory to recycle for reuse when the
+interpreter runs out of memory.  Mark-sweep may seem simple and fast, however,
+integrating a full mark-sweep impacts memory management overall, because it
+also requires an auxiliary stack to keep track of all temporary lists that are
+being constructed by the interpreter that cannot be released yet.  This adds
+overhead to the interpreter to push and pop Lisp values on this auxiliary
+stack.
 
 The tinylisp reference count garbage collector does all the heavy lifting more
 efficiently, while its simple mark-sweep collector only runs when the tinylisp
@@ -76,16 +77,16 @@ everytying away that was computed, except for the global environment `env`.
 
 To collect cells that are no longer used to reuse them later, i.e. to *garbage
 collect* them, we need a pool of cells instead of a stack.  With a pool of free
-cell pairs we can allocate cells for `CONS` and `CLOS` values from the pool and
-return them to the pool when we are done with them.
+cons cell pairs we can allocate cells for `CONS` and `CLOS` values from the
+pool and return them to the pool when we are done with them.
 
-All available free cell pairs in the pool are managed in a single *free list*
-that links together all free cell pairs, linking them via a `ref[]` array.  The
-head of the free list of cell pairs is indexed by the *free cell pairs list
-pointer* `fp`.  Therefore, `cell[fp]` and `cell[fp+1]` is the first free cell
-pair in this list.  The next free cell pair index is `ref[fp/2]`.  Note that we
-only need half the number of `ref[]` entries compared to `cell[]`, so `ref[i/2]`
-corresponds to `cell[i]` and `cell[i+1]`.
+All available free cons cell pairs in the pool are managed in a single *free
+list* that links together all free cons cell pairs, linking them via a `ref[]`
+array.  The head of the free list of cons cell pairs is indexed by the *free
+cons cell pairs list pointer* `fp`.  Therefore, `cell[fp]` and `cell[fp+1]` is
+the first free cell pair in this list.  The next free cell pair index is
+`ref[fp/2]`.  Note that we only need half the number of `ref[]` entries
+compared to `cell[]`, so `ref[i/2]` corresponds to `cell[i]` and `cell[i+1]`.
 
 For a pool of `cell[N]` cells we allocate `ref[N/2]` indices:
 
